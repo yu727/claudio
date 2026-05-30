@@ -14,7 +14,7 @@ export const translations = {
     onAir: "On air",
     speaking: "Speaking...",
     thinking: "Thinking...",
-    idle: "Standby",
+    idle: "思考 CLAUDIO",
     notPlaying: "Not Playing",
     tracks: "tracks",
     djPrefix: "DJ",
@@ -103,6 +103,8 @@ export const translations = {
     favoritesTab: "Favorites",
     noFavorites: "No favorites yet",
     removeFavorite: "Remove",
+    addFavorite: "Add to Favorites",
+    playNext: "Play Next",
 
     // Profile v2
     musicProfile: "Music Profile",
@@ -149,7 +151,7 @@ export const translations = {
     onAir: "直播中",
     speaking: "正在说话...",
     thinking: "思考中...",
-    idle: "待命",
+    idle: "思考 CLAUDIO",
     notPlaying: "未在播放",
     tracks: "首歌",
     djPrefix: "DJ",
@@ -238,6 +240,8 @@ export const translations = {
     favoritesTab: "收藏",
     noFavorites: "还没有收藏歌曲",
     removeFavorite: "取消收藏",
+    addFavorite: "收藏",
+    playNext: "下一首播放",
 
     // Profile v2
     musicProfile: "音乐画像",

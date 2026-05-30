@@ -40,7 +40,7 @@ export default function WaveformBar({ barCount = 60, bass = 0 }: Props) {
       <button
         className="waveform-play-btn"
         onClick={togglePlay}
-        title={isPlaying ? t("idle") : t("onAir")}
+        title={isPlaying ? "暂停" : "播放"}
       >
         {isPlaying ? "⏸" : "▶"}
       </button>

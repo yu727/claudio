@@ -737,6 +737,7 @@ body::after {
   -webkit-backdrop-filter: blur(24px) saturate(1.2);
   animation: cardEnter 0.6s ease-out;
   position: relative;
+  contain: layout style;
 }
 
 @keyframes cardEnter {
@@ -1095,6 +1096,7 @@ body::after {
   display: flex;
   align-items: center;
   gap: 14px;
+  contain: layout style;
 }
 
 .waveform {
@@ -1106,11 +1108,11 @@ body::after {
 }
 
 @keyframes waveform-pulse {
-  0%, 100% { height: 4px; }
-  20% { height: calc(6px + var(--bar-index) * 0.4px); }
-  40% { height: calc(4px + var(--bar-index) * 0.3px); }
-  60% { height: calc(10px + var(--bar-index) * 0.2px); }
-  80% { height: calc(5px + var(--bar-index) * 0.35px); }
+  0%, 100% { transform: scaleY(0.3); }
+  20% { transform: scaleY(calc(0.4 + var(--bar-index) * 0.02)); }
+  40% { transform: scaleY(calc(0.3 + var(--bar-index) * 0.015)); }
+  60% { transform: scaleY(calc(0.6 + var(--bar-index) * 0.01)); }
+  80% { transform: scaleY(calc(0.35 + var(--bar-index) * 0.018)); }
 }
 
 .waveform-bar {
@@ -1118,12 +1120,14 @@ body::after {
   border-radius: 1px;
   background: var(--text-dim);
   min-height: 3px;
-  height: 4px;
+  height: 32px;
   animation: waveform-pulse 1.2s ease-in-out infinite;
   animation-delay: calc(var(--bar-index, 0) * -0.08s);
   animation-play-state: paused;
   animation-fill-mode: both;
   transition: background 0.3s ease;
+  will-change: transform;
+  transform-origin: bottom;
 }
 
 .waveform-bar.animating {
@@ -2120,6 +2124,48 @@ body::after {
   50% { opacity: 0.5; }
 }
 
+/* Current playing item highlight */
+.queue-item.current {
+  background: var(--mint-subtle);
+  border-color: var(--border-mint);
+  box-shadow: 0 0 12px rgba(94, 232, 197, 0.08);
+}
+
+.queue-item.current .queue-title {
+  color: var(--mint);
+  font-weight: 600;
+}
+
+/* Play Next button on each queue item */
+.queue-play-next-btn {
+  opacity: 0;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-secondary);
+  font-size: 10px;
+  padding: 3px 6px;
+  cursor: pointer;
+  transition: all var(--t-fast);
+  flex-shrink: 0;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.queue-item:hover .queue-play-next-btn {
+  opacity: 1;
+}
+
+.queue-play-next-btn:hover {
+  background: var(--mint-subtle);
+  border-color: var(--mint);
+  color: var(--mint);
+}
+
+.queue-play-next-btn:active {
+  transform: scale(0.92);
+}
+
 /* ===== Context Menu ===== */
 .context-menu {
   position: fixed;
@@ -2363,6 +2409,7 @@ body::after {
   inset: 0;
   z-index: 0;
   pointer-events: none;
+  contain: strict;
 }
 
 .viz-canvas {
@@ -4561,12 +4608,15 @@ button {
   z-index: 0;
   pointer-events: none;
   overflow: hidden;
+  contain: strict;
 }
 .fluid-blob {
   position: absolute;
   border-radius: 50%;
   filter: blur(40px) saturate(1.5);
   mix-blend-mode: screen;
+  will-change: transform;
+  contain: layout style paint;
 }
 .fluid-blob.primary {
   width: 45vmin;
@@ -4604,6 +4654,8 @@ button {
   opacity: 0.3;
   transition: opacity 0.3s;
   box-shadow: 0 0 30px 8px var(--color-primary, #5ee8c5);
+  will-change: box-shadow, opacity;
+  contain: layout style;
 }
 .cover-glow.active {
   opacity: 0.8;

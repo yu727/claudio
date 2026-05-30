@@ -187,9 +187,9 @@ export const useChatStore = create<ChatState>((set, get) => ({
                                 const data = JSON.parse(jsonStr);
 
                                 switch (currentEvent) {
-                                    case "status":
+                                        case "status":
                                         if (data.phase === "thinking") {
-                                            set({ streamingText: "🎵 正在为你挑选音乐..." });
+                                            set({ streamingText: "正在思考 CLAUDIO..." });
                                         }
                                         break;
 
@@ -203,7 +203,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
                                         if (displayText.startsWith("{") && (displayText.includes('"say"') || displayText.includes('"play"'))) {
                                             displayText = "";
                                         }
-                                        set({ streamingText: displayText || "🎵 正在为你挑选音乐..." });
+                                        set({ streamingText: displayText || "正在思考 CLAUDIO..." });
                                         break;
 
                                     case "reply":

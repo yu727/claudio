@@ -60,6 +60,7 @@ interface PlayerState {
   setQueue: (items: QueueItem[]) => void;
   enqueueItems: (items: QueueItem[]) => void;
   updateItemAudioUrl: (itemId: string, audioUrl: string) => void;
+  playNext: (item: QueueItem) => void;
   addDjMessage: (text: string) => void;
   clearDjMessages: () => void;
   userActionPlay: () => void;
@@ -284,7 +285,31 @@ export const usePlayerStore = create<PlayerState>((set, get) => {
         }, 500);
       }
       audioPlayer.updateMetadata(item.title ?? "", item.artist ?? "", item.coverUrl ?? "");
-      set({ nowPlaying: item, progressMs: 0, lastError: null });
+      
+      // Update queue item statuses — ensure the played item is in the queue
+      const { queue } = get();
+      const existsInQueue = queue.some((q) => q.id === item.id);
+      let updatedQueue: QueueItem[];
+
+      if (existsInQueue) {
+        updatedQueue = queue.map((qItem) => {
+          if (qItem.id === item.id) {
+            return { ...qItem, status: "playing" as const };
+          }
+          if (qItem.status === "playing") {
+            return { ...qItem, status: "played" as const };
+          }
+          return qItem;
+        });
+      } else {
+        // Item not in queue — add it and mark as playing, demote others
+        updatedQueue = queue.map((qItem) =>
+          qItem.status === "playing" ? { ...qItem, status: "played" as const } : qItem
+        );
+        updatedQueue.push({ ...item, status: "playing" as const });
+      }
+      
+      set({ nowPlaying: item, queue: updatedQueue, progressMs: 0, lastError: null, djStatus: "idle" });
       get().savePlaybackState();
       if (item.type === "song" && item.songId) {
         api.reportPlay({
@@ -390,7 +415,10 @@ export const usePlayerStore = create<PlayerState>((set, get) => {
 
       // Include TTS items with audioUrl in the queue (they play before songs)
       const playableTts = ttsItems.filter((i) => i.audioUrl);
-      const queueItems = [...playableTts, ...songs];
+      const queueItems = [...playableTts, ...songs].map((item, idx) => ({
+        ...item,
+        status: idx === 0 ? "playing" as const : "pending" as const,
+      }));
 
       const first = queueItems[0] ?? null;
       set({ queue: queueItems, nowPlaying: first, progressMs: 0 });
@@ -440,6 +468,19 @@ export const usePlayerStore = create<PlayerState>((set, get) => {
       );
       const updatedNow = nowPlaying?.id === itemId ? { ...nowPlaying, audioUrl } : nowPlaying;
       set({ queue: updatedQueue, nowPlaying: updatedNow });
+    },
+
+    playNext: (item: QueueItem) => {
+      const { queue, nowPlaying } = get();
+      if (!nowPlaying) {
+        get().playItem(item);
+        return;
+      }
+      const currentIdx = queue.findIndex((q) => q.id === nowPlaying.id);
+      const newQueue = [...queue];
+      newQueue.splice(currentIdx + 1, 0, { ...item, status: "pending" });
+      set({ queue: newQueue });
+      get().savePlaybackState();
     },
 
     addDjMessage: (text: string) => {
