@@ -18,7 +18,7 @@ export default function QueueList({ items, onItemClick }: Props) {
   const { t } = useI18n();
   const [contextMenu, setContextMenu] = useState<ContextMenu | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
-  const { toggleFavorite, favoriteIds, playNext, nowPlaying } = usePlayerStore();
+  const { toggleFavorite, favoriteIds, playNext, removeFromQueue, nowPlaying } = usePlayerStore();
 
   const handleContextMenu = useCallback((e: React.MouseEvent, item: QueueItem) => {
     e.preventDefault();
@@ -103,6 +103,16 @@ export default function QueueList({ items, onItemClick }: Props) {
                 title={t("playNext")}
               >
                 &#9654;&#10095;
+              </button>
+              <button
+                className="queue-remove-btn"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  removeFromQueue(item.id);
+                }}
+                title={t("deletePlaylist")}
+              >
+                &#10005;
               </button>
             </li>
           );

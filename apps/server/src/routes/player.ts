@@ -1,6 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import { broadcast } from "./stream.js";
-import { getCurrentState } from "./now.js";
+import { getCurrentState, setDjStatus } from "./now.js";
 import {
   getCurrentItem,
   getQueueItems,
@@ -23,6 +23,7 @@ let isPlaying = true;
 export async function playerRoutes(app: FastifyInstance) {
   app.post("/api/player/play", async () => {
     isPlaying = true;
+    setDjStatus("playing");
     const current = getCurrentItem();
     if (current) {
       setCurrentPlaying(current.id);
@@ -33,6 +34,7 @@ export async function playerRoutes(app: FastifyInstance) {
 
   app.post("/api/player/pause", async () => {
     isPlaying = false;
+    setDjStatus("idle");
     broadcast("now_changed", getCurrentState());
     return { ok: true, isPlaying };
   });

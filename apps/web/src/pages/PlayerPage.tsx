@@ -100,10 +100,9 @@ export default function PlayerPage() {
   }, [isPlaying, bass]);
 
   const statusText =
-    djStatus === "idle" ? "正在思考 CLAUDIO"
-    : djStatus === "thinking" ? "正在思考 CLAUDIO..."
+    djStatus === "idle" ? (isPlaying ? "听歌中" : "待机")
+    : djStatus === "thinking" ? "正在思考"
     : djStatus === "speaking" ? t("speaking")
-    : djStatus === "error" ? "错误"
     : djStatus;
 
   const broadcastTime = useMemo(() => {

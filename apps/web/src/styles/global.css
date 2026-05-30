@@ -2166,6 +2166,35 @@ body::after {
   transform: scale(0.92);
 }
 
+/* Remove button on each queue item */
+.queue-remove-btn {
+  opacity: 0;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-secondary);
+  font-size: 10px;
+  padding: 3px 6px;
+  cursor: pointer;
+  transition: all var(--t-fast);
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.queue-item:hover .queue-remove-btn {
+  opacity: 1;
+}
+
+.queue-remove-btn:hover {
+  background: rgba(255, 80, 80, 0.15);
+  border-color: #ff5050;
+  color: #ff5050;
+}
+
+.queue-remove-btn:active {
+  transform: scale(0.92);
+}
+
 /* ===== Context Menu ===== */
 .context-menu {
   position: fixed;

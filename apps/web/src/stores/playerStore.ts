@@ -61,6 +61,7 @@ interface PlayerState {
   enqueueItems: (items: QueueItem[]) => void;
   updateItemAudioUrl: (itemId: string, audioUrl: string) => void;
   playNext: (item: QueueItem) => void;
+  removeFromQueue: (itemId: string) => void;
   addDjMessage: (text: string) => void;
   clearDjMessages: () => void;
   userActionPlay: () => void;
@@ -480,6 +481,24 @@ export const usePlayerStore = create<PlayerState>((set, get) => {
       const newQueue = [...queue];
       newQueue.splice(currentIdx + 1, 0, { ...item, status: "pending" });
       set({ queue: newQueue });
+      get().savePlaybackState();
+    },
+
+    removeFromQueue: (itemId: string) => {
+      const { queue, nowPlaying } = get();
+      const newQueue = queue.filter((q) => q.id !== itemId);
+      // If removing the current playing song, play the next one
+      if (nowPlaying?.id === itemId) {
+        const idx = queue.findIndex((q) => q.id === itemId);
+        const nextItem = newQueue[idx] || newQueue[0] || null;
+        set({ queue: newQueue, nowPlaying: nextItem });
+        if (nextItem?.audioUrl) {
+          audioPlayer.load(nextItem.audioUrl);
+          audioPlayer.play();
+        }
+      } else {
+        set({ queue: newQueue });
+      }
       get().savePlaybackState();
     },
 

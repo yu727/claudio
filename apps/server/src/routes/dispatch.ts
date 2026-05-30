@@ -1,5 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
+import { setDjStatus } from "./now.js";
 
 const DispatchSchema = z.object({
   message: z.string().min(1).max(500),
@@ -109,6 +110,7 @@ export async function dispatchRoutes(app: FastifyInstance) {
 
     try {
       const contextStr = await context.buildContext(trimmed);
+      setDjStatus("thinking");
       sendEvent("status", { phase: "thinking" });
 
       const chatReply = await claude.generateChatReplyStream(
@@ -142,6 +144,7 @@ export async function dispatchRoutes(app: FastifyInstance) {
       // Send structured reply as final event
       sendEvent("reply", chatReply);
       sendEvent("done", { totalItems: chatReply.play?.length ?? 0 });
+      setDjStatus("idle");
 
       // Record songs to user profile (fire-and-forget)
       const { profile } = app.services;
@@ -159,6 +162,7 @@ export async function dispatchRoutes(app: FastifyInstance) {
     } catch (err) {
       console.error("[dispatch] Error:", err);
       sendEvent("error", { message: "抱歉，出了点问题，请再试一次" });
+      setDjStatus("idle");
     } finally {
       reply.raw.end();
     }
