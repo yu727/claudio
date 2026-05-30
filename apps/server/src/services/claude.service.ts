@@ -255,14 +255,16 @@ export class ClaudeApiService implements ClaudeService {
         userMessage: string,
         onChunk: (text: string) => void
     ): Promise<string> {
-        const url = `${this.baseUrl}/v1/messages`;
+        const url = `${this.baseUrl}/chat/completions`;
 
         const bodyObj = {
             model: this.model,
             max_tokens: 4096,
             stream: true,
-            system: this.systemPrompt,
-            messages: [{ role: "user", content: userMessage }],
+            messages: [
+                { role: "system", content: this.systemPrompt },
+                { role: "user", content: userMessage }
+            ],
         };
 
         const tmpFile = join(tmpdir(), `claude-stream-${Date.now()}.json`);
@@ -273,8 +275,7 @@ export class ClaudeApiService implements ClaudeService {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    "x-api-key": this.apiKey,
-                    "anthropic-version": "2023-06-01",
+                    "Authorization": `Bearer ${this.apiKey}`,
                 },
                 body: JSON.stringify(bodyObj),
                 signal: AbortSignal.timeout(120000),
@@ -282,7 +283,7 @@ export class ClaudeApiService implements ClaudeService {
 
             if (!response.ok) {
                 const errText = await response.text();
-                throw new Error(`Claude API ${response.status}: ${errText.substring(0, 200)}`);
+                throw new Error(`API Error ${response.status}: ${errText.substring(0, 200)}`);
             }
 
             const reader = response.body?.getReader();
@@ -309,13 +310,10 @@ export class ClaudeApiService implements ClaudeService {
 
                     try {
                         const event = JSON.parse(data);
-
-                        if (event.type === "content_block_delta") {
-                            const text = event.delta?.text;
-                            if (text) {
-                                fullText += text;
-                                onChunk(text);
-                            }
+                        const content = event.choices?.[0]?.delta?.content;
+                        if (content) {
+                            fullText += content;
+                            onChunk(content);
                         }
                     } catch {
                         // Skip unparseable lines
@@ -347,23 +345,24 @@ export class ClaudeApiService implements ClaudeService {
                 const bodyStr = JSON.stringify({
                     model: this.model,
                     max_tokens: 4096,
-                    system: this.systemPrompt,
-                    messages: [{ role: "user", content: userMessage }],
+                    messages: [
+                        { role: "system", content: this.systemPrompt },
+                        { role: "user", content: userMessage }
+                    ],
                 });
 
                 const tmpFile = join(tmpdir(), `claude-body-${Date.now()}-${attempt}.json`);
                 await writeFile(tmpFile, bodyStr, "utf-8");
 
                 try {
-                    const url = `${this.baseUrl}/v1/messages`;
-                    console.log(`[claude] Attempt ${attempt + 1}: POST ${url}, key=${this.apiKey.substring(0, 8)}...`);
+                    const url = `${this.baseUrl}/chat/completions`;
+                    console.log(`[mimo] Attempt ${attempt + 1}: POST ${url}, key=${this.apiKey.substring(0, 8)}...`);
 
                     const response = await fetch(url, {
                         method: "POST",
                         headers: {
                             "Content-Type": "application/json",
-                            "x-api-key": this.apiKey,
-                            "anthropic-version": "2023-06-01",
+                            "Authorization": `Bearer ${this.apiKey}`,
                         },
                         body: bodyStr,
                         signal: AbortSignal.timeout(65000),
@@ -371,25 +370,24 @@ export class ClaudeApiService implements ClaudeService {
 
                     if (!response.ok) {
                         const errText = await response.text();
-                        throw new Error(`Claude API ${response.status}: ${errText.substring(0, 200)}`);
+                        throw new Error(`API Error ${response.status}: ${errText.substring(0, 200)}`);
                     }
 
-                    const parsed = await response.json() as { content?: Array<{ type?: string; text?: string }> };
-                    const textContent = parsed?.content?.find((c) => c.type === "text" || !c.type);
-                    return textContent?.text ?? "";
+                    const parsed = await response.json() as { choices?: Array<{ message?: { content?: string } }> };
+                    return parsed?.choices?.[0]?.message?.content ?? "";
                 } finally {
                     await unlink(tmpFile).catch(() => {});
                 }
             } catch (err) {
                 lastError = err as Error;
-                console.error(`[claude] Attempt ${attempt + 1}/${maxRetries} failed:`, (err as Error).message);
+                console.error(`[mimo] Attempt ${attempt + 1}/${maxRetries} failed:`, (err as Error).message);
                 if (attempt < maxRetries - 1) {
                     await new Promise((resolve) => setTimeout(resolve, 1000 * (attempt + 1)));
                 }
             }
         }
 
-        throw lastError || new Error("Claude API failed after all retries");
+        throw lastError || new Error("API failed after all retries");
     }
 
     private extractJson(text: string): ClaudeRawResponse | null {
@@ -492,22 +490,23 @@ export class ClaudeApiService implements ClaudeService {
         systemPrompt: string,
         onChunk: (text: string) => void
     ): Promise<string> {
-        const url = `${this.baseUrl}/v1/messages`;
+        const url = `${this.baseUrl}/chat/completions`;
 
         const bodyObj = {
             model: this.model,
             max_tokens: 4096,
             stream: true,
-            system: systemPrompt,
-            messages: [{ role: "user", content: userMessage }],
+            messages: [
+                { role: "system", content: systemPrompt },
+                { role: "user", content: userMessage }
+            ],
         };
 
         const response = await fetch(url, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
-                "x-api-key": this.apiKey,
-                "anthropic-version": "2023-06-01",
+                "Authorization": `Bearer ${this.apiKey}`,
             },
             body: JSON.stringify(bodyObj),
             signal: AbortSignal.timeout(120000),
@@ -515,7 +514,7 @@ export class ClaudeApiService implements ClaudeService {
 
         if (!response.ok) {
             const errText = await response.text();
-            throw new Error(`Claude API ${response.status}: ${errText.substring(0, 200)}`);
+            throw new Error(`API Error ${response.status}: ${errText.substring(0, 200)}`);
         }
 
         const reader = response.body?.getReader();
@@ -542,12 +541,10 @@ export class ClaudeApiService implements ClaudeService {
 
                 try {
                     const event = JSON.parse(data);
-                    if (event.type === "content_block_delta") {
-                        const text = event.delta?.text;
-                        if (text) {
-                            fullText += text;
-                            onChunk(text);
-                        }
+                    const content = event.choices?.[0]?.delta?.content;
+                    if (content) {
+                        fullText += content;
+                        onChunk(content);
                     }
                 } catch {
                     // Skip unparseable lines

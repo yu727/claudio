@@ -3,6 +3,7 @@ import { getAllSettings, setSetting } from "../db/settings.repo.js";
 
 const SENSITIVE_KEYS = [
   "claude_api_key",
+  "mimo_api_key",
   "fish_audio_api_key",
   "openweather_api_key",
   "feishu_app_secret",

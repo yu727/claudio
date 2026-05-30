@@ -6,6 +6,11 @@ export interface AppConfig {
     baseUrl: string;
     model: string;
   };
+  mimo: {
+    apiKey: string;
+    baseUrl: string;
+    model: string;
+  };
   ncm: {
     apiBaseUrl: string;
     uid: string;
@@ -36,6 +41,11 @@ export function loadConfig(): AppConfig {
       apiKey: env("CLAUDE_API_KEY"),
       baseUrl: env("CLAUDE_BASE_URL", "https://api.anthropic.com"),
       model: env("CLAUDE_MODEL", "claude-sonnet-4-20250514"),
+    },
+    mimo: {
+      apiKey: env("MIMO_API_KEY"),
+      baseUrl: env("MIMO_BASE_URL", "https://token-plan-cn.xiaomimimo.com/v1"),
+      model: env("MIMO_MODEL", "mimo-v2-pro"),
     },
     ncm: {
       apiBaseUrl: env("NCM_API_BASE_URL", "http://localhost:3000"),
