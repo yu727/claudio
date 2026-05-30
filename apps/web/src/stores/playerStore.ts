@@ -75,7 +75,13 @@ export const usePlayerStore = create<PlayerState>((set, get) => {
     set({ isPlaying: true, needsUserAction: false });
   });
   audioPlayer.onPause(() => set({ isPlaying: false }));
+
+  // Throttle timeupdate to reduce re-renders (~20fps instead of ~60fps)
+  let lastTimeUpdate = 0;
   audioPlayer.onTimeUpdate((current, duration) => {
+    const now = performance.now();
+    if (now - lastTimeUpdate < 50) return;
+    lastTimeUpdate = now;
     set({ progressMs: current, durationMs: duration });
   });
   audioPlayer.onEnded(() => {

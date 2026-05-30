@@ -46,6 +46,9 @@ export default function PlayerPage() {
   const [visualMode, setVisualMode] = useState<ModeKey>("Arcs");
   const [bass, setBass] = useState(0);
   const [mid, setMid] = useState(0);
+  const bassRef = useRef(0);
+  const midRef = useRef(0);
+  const lastBassUpdate = useRef(0);
 
   const [showLeftSidebar, setShowLeftSidebar] = useState(false);
   const [showRightSidebar, setShowRightSidebar] = useState(false);
@@ -76,7 +79,7 @@ export default function PlayerPage() {
     }
   }, [nowPlaying?.songId]);
 
-  // Cover glow animation
+  // Cover glow animation — uses refs to avoid re-renders
   useEffect(() => {
     const glow = coverGlowRef.current;
     if (!glow) return;
@@ -84,9 +87,10 @@ export default function PlayerPage() {
     const animate = () => {
       const t = performance.now();
       if (isPlaying) {
-        const shadow = 40 + bass * 80;
-        const spread = 10 + bass * 25;
-        glow.style.opacity = String(0.3 + bass * 0.5);
+        const b = bassRef.current;
+        const shadow = 40 + b * 80;
+        const spread = 10 + b * 25;
+        glow.style.opacity = String(0.3 + b * 0.5);
         glow.style.boxShadow = `0 0 ${shadow}px ${spread}px var(--color-primary, #5ee8c5)`;
       } else {
         const idle = 0.3 + 0.05 * Math.sin(t * 0.001);
@@ -97,7 +101,7 @@ export default function PlayerPage() {
     };
     frame = requestAnimationFrame(animate);
     return () => cancelAnimationFrame(frame);
-  }, [isPlaying, bass]);
+  }, [isPlaying]);
 
   const statusText =
     djStatus === "idle" ? (isPlaying ? "听歌中" : "待机")
@@ -166,13 +170,18 @@ export default function PlayerPage() {
   };
 
   const handleFrequencyData = useCallback((b: number, m: number) => {
-    setBass(b);
-    setMid(m);
+    bassRef.current = b;
+    midRef.current = m;
+    // Update CSS variable directly (no re-render)
+    document.documentElement.style.setProperty("--audio-bass", String(b));
+    // Throttle state updates to ~15fps for React components
+    const now = performance.now();
+    if (now - lastBassUpdate.current > 66) {
+      lastBassUpdate.current = now;
+      setBass(b);
+      setMid(m);
+    }
   }, []);
-
-  useEffect(() => {
-    document.documentElement.style.setProperty("--audio-bass", String(bass));
-  }, [bass]);
 
   return (
     <div className="main-inner">

@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback, useEffect, useRef, memo } from "react";
 import type { QueueItem } from "../api/client";
 import { useI18n } from "../i18n/context";
 import { usePlayerStore } from "../stores/playerStore";
@@ -14,7 +14,7 @@ interface ContextMenu {
   item: QueueItem;
 }
 
-export default function QueueList({ items, onItemClick }: Props) {
+export default memo(function QueueList({ items, onItemClick }: Props) {
   const { t } = useI18n();
   const [contextMenu, setContextMenu] = useState<ContextMenu | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -147,7 +147,7 @@ export default function QueueList({ items, onItemClick }: Props) {
       )}
     </>
   );
-}
+})
 
 function CoverImage({ url }: { url?: string }) {
   const [error, setError] = useState(false);
