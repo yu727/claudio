@@ -58,14 +58,19 @@ const ncmUid = getSetting("ncm_uid") ?? config.ncm.uid;
 const ncm = config.ncm.apiBaseUrl
   ? new NeteaseNcmService(config.ncm.apiBaseUrl, ncmCookie || undefined, ncmUid || undefined)
   : new MockNcmService();
+
+// 优先使用 mimo API，如果没有则使用 claude API
+const mimoApiKey = getSetting("mimo_api_key") ?? config.mimo.apiKey;
 const claudeApiKey = getSetting("claude_api_key") ?? config.claude.apiKey;
-const claude = claudeApiKey
+const aiApiKey = mimoApiKey || claudeApiKey;
+
+const claude = aiApiKey
   ? (() => {
       const systemPrompt = readFileSync(join(__dirname, "prompts/plan-system.md"), "utf-8");
-      return new ClaudeApiService(
-        { apiKey: claudeApiKey, baseUrl: config.claude.baseUrl, model: config.claude.model },
-        systemPrompt
-      );
+      const aiConfig = mimoApiKey
+        ? { apiKey: mimoApiKey, baseUrl: config.mimo.baseUrl, model: config.mimo.model }
+        : { apiKey: claudeApiKey, baseUrl: config.claude.baseUrl, model: config.claude.model };
+      return new ClaudeApiService(aiConfig, systemPrompt);
     })()
   : new MockClaudeService();
 const fishApiKey = getSetting("fish_audio_api_key") ?? config.fishAudio.apiKey;
@@ -90,7 +95,7 @@ const context = new ContextService(weather, calendar, profile);
 const playlist = new PlaylistService();
 
 // 调度器需要 claude 和 context，所以在它们之后创建
-const scheduler = claudeApiKey
+const scheduler = aiApiKey
   ? new CronSchedulerService({ claude, context })
   : new MockSchedulerService();
 
@@ -101,11 +106,11 @@ app.get("/api/health", async () => ({
   timestamp: new Date().toISOString(),
   services: {
     ncm: config.ncm.apiBaseUrl ? "connected" : "mock",
-    claude: claudeApiKey ? "connected" : "mock",
+    claude: aiApiKey ? "connected" : "mock",
     tts: fishApiKey ? "connected" : "mock",
     weather: weatherApiKey ? "connected" : "wttr.in",
     calendar: feishuAppId ? "connected" : "mock",
-    scheduler: claudeApiKey ? "cron" : "mock",
+    scheduler: aiApiKey ? "cron" : "mock",
   },
 }));
 
@@ -138,12 +143,11 @@ if (existsSync(webDist)) {
   await app.register(fastifyStatic, {
     root: webDist,
     prefix: "/",
-    decorateReply: false,
   });
   // SPA fallback: any non-API GET that doesn't match a static file returns index.html
   app.setNotFoundHandler((req, reply) => {
     if (req.method === "GET" && !req.url.startsWith("/api/") && !req.url.startsWith("/ws/")) {
-      return reply.type("text/html").sendFile("index.html");
+      return reply.sendFile("index.html");
     }
     reply.status(404).send({ message: "Route " + req.method + ":" + req.url + " not found", error: "Not Found", statusCode: 404 });
   });
