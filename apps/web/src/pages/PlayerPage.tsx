@@ -174,9 +174,9 @@ export default function PlayerPage() {
     midRef.current = m;
     // Update CSS variable directly (no re-render)
     document.documentElement.style.setProperty("--audio-bass", String(b));
-    // Throttle state updates to ~15fps for React components
+    // Throttle state updates to ~25fps for React components
     const now = performance.now();
-    if (now - lastBassUpdate.current > 66) {
+    if (now - lastBassUpdate.current > 40) {
       lastBassUpdate.current = now;
       setBass(b);
       setMid(m);
