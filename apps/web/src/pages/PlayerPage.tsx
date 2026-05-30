@@ -47,8 +47,6 @@ export default function PlayerPage() {
   const [bass, setBass] = useState(0);
   const [mid, setMid] = useState(0);
   const bassRef = useRef(0);
-  const midRef = useRef(0);
-  const lastBassUpdate = useRef(0);
 
   const [showLeftSidebar, setShowLeftSidebar] = useState(false);
   const [showRightSidebar, setShowRightSidebar] = useState(false);
@@ -172,15 +170,9 @@ export default function PlayerPage() {
   const handleFrequencyData = useCallback((b: number, m: number) => {
     bassRef.current = b;
     midRef.current = m;
-    // Update CSS variable directly (no re-render)
     document.documentElement.style.setProperty("--audio-bass", String(b));
-    // Throttle state updates to ~25fps for React components
-    const now = performance.now();
-    if (now - lastBassUpdate.current > 40) {
-      lastBassUpdate.current = now;
-      setBass(b);
-      setMid(m);
-    }
+    setBass(b);
+    setMid(m);
   }, []);
 
   return (

@@ -76,12 +76,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => {
   });
   audioPlayer.onPause(() => set({ isPlaying: false }));
 
-  // Throttle timeupdate to ~30fps
-  let lastTimeUpdate = 0;
   audioPlayer.onTimeUpdate((current, duration) => {
-    const now = performance.now();
-    if (now - lastTimeUpdate < 33) return;
-    lastTimeUpdate = now;
     set({ progressMs: current, durationMs: duration });
   });
   audioPlayer.onEnded(() => {
