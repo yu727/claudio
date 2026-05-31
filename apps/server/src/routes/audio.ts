@@ -22,36 +22,40 @@ export async function audioRoutes(app: FastifyInstance) {
 
     try {
       const ncmRes = await fetch(`${ncmBaseUrl}/audio?${params.toString()}`, {
-        signal: AbortSignal.timeout(30000),
+        signal: AbortSignal.timeout(60000),
       });
 
       if (!ncmRes.ok) {
         return reply.code(ncmRes.status).send({ error: `NCM returned ${ncmRes.status}` });
       }
 
-      // Read the response body to detect format
-      const buffer = Buffer.from(await ncmRes.arrayBuffer());
-
-      // Detect actual audio format from magic bytes
-      let contentType = "audio/mpeg";
-      if (buffer.length >= 4) {
-        const magic = buffer.toString("ascii", 0, 4);
-        if (magic === "fLaC") {
-          contentType = "audio/flac";
-        } else if (magic === "OggS") {
-          contentType = "audio/ogg";
-        } else if (buffer[0] === 0xff && (buffer[1] & 0xe0) === 0xe0) {
-          contentType = "audio/mpeg";
-        }
-      }
+      // Stream audio directly to client (no buffering)
+      const contentType = ncmRes.headers.get("content-type") || "audio/mpeg";
+      const contentLength = ncmRes.headers.get("content-length");
 
       reply.header("Content-Type", contentType);
       reply.header("Access-Control-Allow-Origin", "*");
       reply.header("Accept-Ranges", "bytes");
-      reply.header("Content-Length", buffer.length);
       reply.header("Cache-Control", "public, max-age=3600");
+      if (contentLength) {
+        reply.header("Content-Length", contentLength);
+      }
 
-      return reply.send(buffer);
+      // Pipe the response body directly
+      if (ncmRes.body) {
+        const reader = ncmRes.body.getReader();
+        const pump = async () => {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            reply.raw.write(value);
+          }
+          reply.raw.end();
+        };
+        await pump();
+      } else {
+        return reply.code(500).send({ error: "No response body" });
+      }
     } catch (err) {
       request.log.error(err, "Audio proxy error");
       return reply.code(500).send({ error: "Audio proxy failed" });

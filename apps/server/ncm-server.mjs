@@ -366,4 +366,4 @@ const server = http.createServer(async (req, res) => {
   }
 });
 
-server.listen(PORT, () => console.log(`[ncm] API server on http://localhost:${PORT}`));
+server.listen(PORT, "0.0.0.0", () => console.log(`[ncm] API server on http://0.0.0.0:${PORT}`));
