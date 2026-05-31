@@ -202,13 +202,22 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
                                     case "chunk":
                                         collectedText += data.text;
-                                        // Strip raw JSON code blocks AND bare JSON objects from display
+                                        // Strip JSON code blocks (complete or incomplete)
                                         let displayText = collectedText
                                             .replace(/```json\s*[\s\S]*?```/g, "")
+                                            .replace(/```json\s*[\s\S]*$/g, "")  // incomplete block during streaming
                                             .trim();
                                         // If text starts with { and likely contains JSON, hide it
                                         if (displayText.startsWith("{") && (displayText.includes('"say"') || displayText.includes('"play"'))) {
                                             displayText = "";
+                                        }
+                                        // Strip trailing partial JSON object
+                                        const jsonStart = displayText.lastIndexOf("\n{");
+                                        if (jsonStart >= 0) {
+                                            const after = displayText.slice(jsonStart);
+                                            if (after.includes('"say"') || after.includes('"play"') || after.includes('"summary"')) {
+                                                displayText = displayText.slice(0, jsonStart).trim();
+                                            }
                                         }
                                         set({ streamingText: displayText || "正在思考 CLAUDIO..." });
                                         break;
@@ -273,7 +282,11 @@ export const useChatStore = create<ChatState>((set, get) => ({
                 }
 
                 // Build the final AI message
-                const cleanedText = collectedText.replace(/```json\s*[\s\S]*?```/g, "").trim();
+                const cleanedText = collectedText
+                    .replace(/```json\s*[\s\S]*?```/g, "")
+                    .replace(/```json\s*[\s\S]*$/g, "")
+                    .replace(/\{[\s\S]*"summary"[\s\S]*"play"[\s\S]*\}/g, "")
+                    .trim();
                 const displayText = structuredReply?.say || cleanedText || "已为你生成播放列表";
 
                 // Convert structured play to RecommendedSong if we have them
