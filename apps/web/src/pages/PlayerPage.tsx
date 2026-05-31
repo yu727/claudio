@@ -169,7 +169,6 @@ export default function PlayerPage() {
 
   const handleFrequencyData = useCallback((b: number, m: number) => {
     bassRef.current = b;
-    midRef.current = m;
     document.documentElement.style.setProperty("--audio-bass", String(b));
     setBass(b);
     setMid(m);

@@ -29,7 +29,7 @@ export class MimoTtsService implements TtsService {
       text = text.slice(0, 200);
     }
 
-    const hash = createHash("sha256").update(text).digest("hex").slice(0, 16);
+    const hash = createHash("sha256").update(`${this.model}:${text}`).digest("hex").slice(0, 16);
     const filename = `${hash}.mp3`;
     const filepath = join(this.cacheDir, filename);
 
@@ -71,6 +71,75 @@ export class MimoTtsService implements TtsService {
       return `/api/media/tts/${hash}`;
     } catch (err) {
       console.error("[tts] Mimo TTS failed:", err);
+      return "";
+    }
+  }
+}
+
+export class MimoVoiceCloneTtsService implements TtsService {
+  private apiKey: string;
+  private baseUrl: string;
+  private model: string;
+  private voiceId: string;
+  private cacheDir: string;
+
+  constructor(config: { apiKey: string; baseUrl: string; model: string; voiceId: string }) {
+    this.apiKey = config.apiKey;
+    this.baseUrl = config.baseUrl;
+    this.model = config.model;
+    this.voiceId = config.voiceId;
+    this.cacheDir = CACHE_DIR;
+    mkdirSync(this.cacheDir, { recursive: true });
+  }
+
+  async synthesize(text: string): Promise<string> {
+    if (text.length > 200) {
+      text = text.slice(0, 200);
+    }
+
+    const hash = createHash("sha256").update(`voiceclone:${this.voiceId}:${text}`).digest("hex").slice(0, 16);
+    const filename = `${hash}.mp3`;
+    const filepath = join(this.cacheDir, filename);
+
+    if (existsSync(filepath) && readFileSync(filepath).length > 0) {
+      return `/api/media/tts/${hash}`;
+    }
+
+    try {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 30000);
+
+      const url = `${this.baseUrl}/audio/speech`;
+      const headers = {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${this.apiKey}`,
+      };
+      const body = JSON.stringify({
+        model: this.model,
+        input: text,
+        voice: this.voiceId,
+        response_format: "mp3",
+      });
+
+      const res = await fetch(url, {
+        method: "POST",
+        headers,
+        body,
+        signal: controller.signal,
+      });
+
+      clearTimeout(timer);
+
+      if (!res.ok) {
+        const errText = await res.text().catch(() => "");
+        throw new Error(`Mimo VoiceClone TTS API ${res.status}: ${res.statusText} ${errText}`);
+      }
+
+      const buffer = Buffer.from(await res.arrayBuffer());
+      writeFileSync(filepath, buffer);
+      return `/api/media/tts/${hash}`;
+    } catch (err) {
+      console.error("[tts] Mimo VoiceClone TTS failed:", err);
       return "";
     }
   }

@@ -627,6 +627,43 @@ body::after {
   overflow-wrap: break-word;
 }
 
+/* TTS play button on AI/DJ messages */
+.tts-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 6px;
+  padding: 3px 8px;
+  font-size: 12px;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--t-fast);
+  opacity: 0.6;
+}
+
+.tts-btn:hover {
+  opacity: 1;
+  background: var(--mint-subtle);
+  border-color: var(--mint);
+  color: var(--mint);
+}
+
+.tts-btn.playing {
+  opacity: 1;
+  background: var(--mint-subtle);
+  border-color: var(--mint);
+  color: var(--mint);
+  animation: ttsPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes ttsPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
 .chat-bubble.user .chat-content {
   background: var(--mint-subtle);
   border-color: var(--border-mint);

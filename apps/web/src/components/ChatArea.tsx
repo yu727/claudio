@@ -1,9 +1,9 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { useChatStore, type ChatMessage, type RecommendedSong } from "../stores/chatStore";
 import { usePlayerStore } from "../stores/playerStore";
 import type { QueueItem, StructuredReply } from "../api/client";
 import SongCard from "./SongCard";
-import { speak } from "../utils/voiceSynth";
+import { speak, stop as stopTts, isSpeaking } from "../utils/voiceSynth";
 
 export default function ChatArea() {
     const { messages, streamingText, streamingSongs, streamingReply, isStreaming, error } = useChatStore();
@@ -83,6 +83,21 @@ export default function ChatArea() {
 function ChatBubble({ message }: { message: ChatMessage }) {
     const isUser = message.role === "user";
     const isDj = message.role === "dj";
+    const [ttsPlaying, setTtsPlaying] = useState(false);
+
+    const handleSpeak = useCallback(async (text: string) => {
+        if (isSpeaking()) {
+            stopTts();
+            setTtsPlaying(false);
+            return;
+        }
+        setTtsPlaying(true);
+        try {
+            await speak(text);
+        } finally {
+            setTtsPlaying(false);
+        }
+    }, []);
 
     return (
         <div className={`chat-bubble ${message.role}`}>
@@ -98,6 +113,13 @@ function ChatBubble({ message }: { message: ChatMessage }) {
                     <div className="chat-avatar dj">🎧</div>
                     <div className="chat-content">
                         <div className="chat-text">{message.text}</div>
+                        <button
+                            className={`tts-btn ${ttsPlaying ? "playing" : ""}`}
+                            onClick={() => handleSpeak(message.text)}
+                            title="播放语音"
+                        >
+                            {ttsPlaying ? "⏸" : "🔊"}
+                        </button>
                     </div>
                 </>
             ) : (
@@ -112,6 +134,13 @@ function ChatBubble({ message }: { message: ChatMessage }) {
                         ) : (
                             <>
                                 <div className="chat-text">{message.text}</div>
+                                <button
+                                    className={`tts-btn ${ttsPlaying ? "playing" : ""}`}
+                                    onClick={() => handleSpeak(message.text)}
+                                    title="播放语音"
+                                >
+                                    {ttsPlaying ? "⏸" : "🔊"}
+                                </button>
                                 {message.songs && message.songs.length > 0 && (
                                     <div className="song-cards">
                                         {message.songs.map((song, i) => (

@@ -10,6 +10,8 @@ export interface AppConfig {
     apiKey: string;
     baseUrl: string;
     model: string;
+    ttsModel: string;
+    ttsVoiceId: string;
   };
   ncm: {
     apiBaseUrl: string;
@@ -46,6 +48,8 @@ export function loadConfig(): AppConfig {
       apiKey: env("MIMO_API_KEY"),
       baseUrl: env("MIMO_BASE_URL", "https://token-plan-cn.xiaomimimo.com/v1"),
       model: env("MIMO_MODEL", "mimo-v2-pro"),
+      ttsModel: env("MIMO_TTS_MODEL", "mimo-v2.5-tts-voiceclone"),
+      ttsVoiceId: env("MIMO_TTS_VOICE_ID", ""),
     },
     ncm: {
       apiBaseUrl: env("NCM_API_BASE_URL", "http://localhost:3000"),
