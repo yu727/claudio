@@ -23,13 +23,13 @@ export default function ChatArea() {
                         <div className="chat-welcome-avatar">🎵</div>
                         <div className="chat-welcome-title">Hey, 我是 Claudio</div>
                         <div className="chat-welcome-desc">
-                            你的私人 AI 音乐助手，告诉我你现在想听什么～
+                            你的 AI 音乐伙伴，想聊什么都可以～
                         </div>
                         <div className="chat-welcome-hints">
-                            <ChatHint text="来点轻松的音乐" />
                             <ChatHint text="推荐几首适合写代码的歌" />
-                            <ChatHint text="今天心情不太好，想听点治愈的" />
+                            <ChatHint text="今天心情不太好" />
                             <ChatHint text="来点周杰伦的歌" />
+                            <ChatHint text="聊聊最近的电影" />
                         </div>
                     </div>
                 )}

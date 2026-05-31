@@ -96,10 +96,17 @@ export const useChatStore = create<ChatState>((set, get) => ({
         // Try dispatch: first attempt non-streaming (command/search)
         (async () => {
             try {
+                // Build chat history (last 10 messages)
+                const { messages: chatHistory } = get();
+                const history = chatHistory.slice(-10).map((m) => ({
+                    role: m.role === "ai" ? "ai" as const : "user" as const,
+                    text: m.text,
+                }));
+
                 const res = await fetch("/api/dispatch", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ message: text }),
+                    body: JSON.stringify({ message: text, history }),
                 });
 
                 if (!res.ok) {

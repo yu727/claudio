@@ -4,6 +4,10 @@ import { setDjStatus } from "./now.js";
 
 const DispatchSchema = z.object({
   message: z.string().min(1).max(500),
+  history: z.array(z.object({
+    role: z.enum(["user", "ai"]),
+    text: z.string(),
+  })).optional(),
 });
 
 interface DispatchCommand {
@@ -62,8 +66,8 @@ export async function dispatchRoutes(app: FastifyInstance) {
     }
   });
 
-  app.post<{ Body: { message: string } }>("/api/dispatch", async (request, reply) => {
-    const { message } = DispatchSchema.parse(request.body);
+    app.post<{ Body: { message: string; history?: Array<{ role: string; text: string }> } }>("/api/dispatch", async (request, reply) => {
+    const { message, history } = DispatchSchema.parse(request.body);
     const trimmed = message.trim();
 
     // 1. Command fast-path
@@ -113,12 +117,18 @@ export async function dispatchRoutes(app: FastifyInstance) {
       setDjStatus("thinking");
       sendEvent("status", { phase: "thinking" });
 
+      const chatHistory = (history ?? []).map((h) => ({
+        role: h.role === "ai" ? "assistant" as const : "user" as const,
+        content: h.text,
+      }));
+
       const chatReply = await claude.generateChatReplyStream(
         trimmed,
         contextStr,
         (chunk: string) => {
           sendEvent("chunk", { text: chunk });
-        }
+        },
+        chatHistory
       );
 
       // Enrich play songs with NCM search results (get audio URLs)
